@@ -127,7 +127,7 @@ if __name__ == '__main__':
     mem_usage, compute_time = profile(model, inputs, labels, 
                                       torch.nn.CrossEntropyLoss(), 
                                       use_cuda=torch.cuda.is_available(),
-                                      export=True)
+                                      export=False)
     compute_time /= (1000.0*1000.0)
 
     print(f'Memory usage (kb): {mem_usage:,}, Compute Time (sec.): {compute_time:.4f}')
