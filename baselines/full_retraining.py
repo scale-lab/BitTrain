@@ -120,6 +120,10 @@ if __name__ == '__main__':
 
     num_ftrs = model.fc.in_features
 
+    # only change the last layer
+    model.fc = torch.nn.Linear(num_ftrs, len(class_names))
+    model = model.to(device)
+
     # memory profiling first
     inputs, labels = next(iter(dataloaders['val']))
     inputs = inputs.to(device)
@@ -132,9 +136,6 @@ if __name__ == '__main__':
 
     print(f'Memory usage (kb): {mem_usage:,}, Compute Time (sec.): {compute_time:.4f}')
     
-    # only change the last layer
-    model.fc = torch.nn.Linear(num_ftrs, len(class_names))
-    model = model.to(device)
 
     # but re-train the whole model (no freezing)
     train_model(model, dataloaders, num_epochs=25)
