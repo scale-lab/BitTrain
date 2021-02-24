@@ -6,15 +6,15 @@ def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='
     '''
     Returns the memory usage and compute time of one training loop (forward, backward).
 
-            Parameters:
-                    model (torch.nn.Module): A model defined in PyTorch
-                    inputs (torch.tensor): A batch tensor input to the model
-                    labels (torch.tensor): Labels for the batch to calculate the loss
-                    loss_fn: A function used to compute the loss (and run backward() on)
-                    use_cuda (boolean): whether to run the training in gpu or cpu
-            Returns:
-                    mem_usage (int): Memory usage in kb
-                    compute_time (float): Total time spent for training in us
+    Parameters:
+            model (torch.nn.Module): A model defined in PyTorch
+            inputs (torch.tensor): A batch tensor input to the model
+            labels (torch.tensor): Labels for the batch to calculate the loss
+            loss_fn: A function used to compute the loss (and run backward() on)
+            use_cuda (boolean): whether to run the training in gpu or cpu
+    Returns:
+            mem_usage (int): Memory usage in kb
+            compute_time (float): Total time spent for training in us
     '''
     with profiler.profile(profile_memory=True, use_cuda=use_cuda) as prof:
         with profiler.record_function(name):

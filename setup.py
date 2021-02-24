@@ -22,6 +22,11 @@ setup(
   download_url = download_url,
   keywords = ['Edge', 'Computing', 'Deep Learning'],
   install_requires=[
+    'numpy==1.20.1',
+    'Pillow==8.1.0',
+    'torch==1.7.1',
+    'torchvision==0.8.2',
+    'typing-extensions==3.7.4.3'
   ],
   classifiers=[
     'Development Status :: 3 - Alpha',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
