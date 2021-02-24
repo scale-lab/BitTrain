@@ -14,7 +14,7 @@ Trying to make training on the edge memory efficient
 In order to measure the memory footprint for a model during training, we provide the following function:
 
 ```Python
-from edgify.profiling import profile
+from edgify.profiling.functions import profile
 
 ```
 
@@ -37,6 +37,25 @@ print(mem, compute)     # prints memory (in KB) and total time for one training 
 The function takes optional arguments:
 - `use_cuda=True`: profile memory and time for GPU
 - `export=True`: exports the results of the profiling in table and trace formats. It uses the `name` argument as the file path.
+
+
+## Baselines
+We perform baselines on a transfer learning task. Refer to the [Pytorch Tutorial](https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html). Download the dataset from [this link](https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html) and extract it to the `./data` folder.
+
+### Full Re-training
+
+```Shell
+cd baselines
+python full_retraining.pyt resnet18
+```
+
+You can try with different models from [PyTorch models library](https://pytorch.org/vision/0.8/models.html).
+
+### Freeze Feature Extractor
+
+
+### Bias-only Training
+
 
 
 ## License
