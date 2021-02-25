@@ -37,7 +37,7 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
         for batch_size in batch_sizes:
             if verbose:
                 print(f'Batch Size {batch_size}')
-                
+
             inputs = randn(batch_size, 3, 224, 224).to(device)
             labels = randint(2, (batch_size, )).to(device)
             loss_fn = nll_loss
@@ -59,8 +59,8 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
         plt.savefig("compute_batch_size.png")
 
         plt.figure(1)
-        plt.plot(batch_sizes, cpu_compute, f'{color}-', label=f"CPU {name}")
-        plt.plot(batch_sizes, cuda_compute, f'{color}--', label=f"CUDA {name}")
+        plt.plot(batch_sizes, cpu_mem, f'{color}-', label=f"CPU {name}")
+        plt.plot(batch_sizes, cuda_mem, f'{color}--', label=f"CUDA {name}")
 
         plt.xlabel("Batch Size")
         plt.ylabel("Memory (MB)")
