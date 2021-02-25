@@ -1,3 +1,4 @@
+import torch
 from torch import randn, randint
 from torch.nn.functional import nll_loss
 from torchvision.models import resnet18, resnet34, mobilenet_v2
@@ -16,6 +17,7 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
         cuda_compute = []
         
         batch_sizes = [1, 2, 4, 8, 16, 32, 64]
+        # Profile execution on CPU
         for batch_size in batch_sizes:
             if verbose:
                 print(f'Batch Size {batch_size}')
@@ -23,15 +25,22 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
             inputs = randn(batch_size, 3, 224, 224)
             labels = randint(2, (batch_size, ))
             loss_fn = nll_loss
-
-            # Profile execution on CPU
             mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=False, name=str(name+"CPU"))
             cpu_mem.append(mem)
             cpu_compute.append(compute)
             if verbose:
                 print(f'Model {name} - CPU - Memory Footprint: {mem} MB - Latency: {compute} ms')
 
-            # Profile execution on CUDA
+        # Profile execution on CUDA
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = model.to(device)
+        for batch_size in batch_sizes:
+            if verbose:
+                print(f'Batch Size {batch_size}')
+                
+            inputs = randn(batch_size, 3, 224, 224).to(device)
+            labels = randint(2, (batch_size, )).to(device)
+            loss_fn = nll_loss
             mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=True, name=str(name+"CUDA"))
             cuda_mem.append(mem)
             cuda_compute.append(compute)
