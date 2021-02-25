@@ -1,7 +1,8 @@
 import sys
 import torch.autograd.profiler as profiler
+import torch 
 
-def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='model_training', itterations=20):
+def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='model_training'):
     '''
     Returns the memory usage and compute time of one training loop (forward, backward).
 
@@ -12,7 +13,7 @@ def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='
             loss_fn: A function used to compute the loss (and run backward() on)
             use_cuda (boolean): whether to run the training in gpu or cpu
     Returns:
-            mem_usage (int): Memory usage in GB
+            mem_usage (int): Memory usage in MB
             compute_time (float): Total time spent for training in ms
     '''
     if use_cuda and not torch.cuda.is_available():
@@ -22,27 +23,13 @@ def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='
     
     with profiler.profile(profile_memory=True, use_cuda=use_cuda) as prof:
         with profiler.record_function(name):
-            # If CUDA enabled, move the model and inputs to GPU
-            if use_cuda:
-                device = torch.device(0)
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                model.to(device)
-
-            for _ in range(itterations):
-                out = model(inputs)
-                loss = loss_fn(out, labels)
-                loss.backward()
-            
-            # If CUDA enabled, return the model to CPU
-            if use_cuda:
-                model.to("cpu")
+            out = model(inputs)
+            loss = loss_fn(out, labels)
+            loss.backward()
 
     if use_cuda:
-        mem_usage = prof.total_average().cuda_memory_usage \
-                + prof.total_average().cpu_memory_usage
-        compute_time = prof.total_average().self_cuda_time_total \
-                + prof.total_average().self_cpu_time_total
+        mem_usage = prof.total_average().cuda_memory_usage
+        compute_time = prof.total_average().self_cuda_time_total
         table = prof.key_averages().table(sort_by="cuda_memory_usage")
     else:
         mem_usage = prof.total_average().cpu_memory_usage
@@ -54,15 +41,10 @@ def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='
         with open(name + '.txt', 'w') as f:
             f.write(table)
 
-    if sys.platform == 'darwin':
-        # on Mac OS X mem_usage is in bytes, on Linux it is in KB
-        mem_usage //= 1024
+    mem_usage //= 1024*1024 # Memory Usage in Mega Bytes (convert from B to MB)
+    compute_time //= 1000 # Compute time in milli seconds (convert from us to ms)
 
-    avg_mem_usage = mem_usage/(itterations*1000000) # Average Memory Usage in Giga Bytes (convert from KB to GB)
-    avg_compute_time = compute_time/(itterations*1000) # Average Compute time in milli seconds (convert from us to ms)
-
-    return avg_mem_usage, avg_compute_time
-
+    return mem_usage, compute_time
 
 if __name__ == '__main__':
     from torch import randn, randint
