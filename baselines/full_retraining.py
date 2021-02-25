@@ -15,7 +15,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    dataloaders, class_names, dataset_sizes = load_data()
+    dataloaders, class_names, dataset_sizes = load_data("cifar10")
     model = getattr(models, args.model)(pretrained=True)
 
     # Add fully connected layers for classification
@@ -39,4 +39,6 @@ if __name__ == '__main__':
     print(f'Memory usage (Mb): {mem_usage:,}, Compute Time (sec.): {compute_time:.4f} on {device}')
     
     # Re-train the whole model (no freezing)
-    train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=25)
+    model = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=25)
+
+    torch.save(model.state_dict(), "full_retraining.pt")
