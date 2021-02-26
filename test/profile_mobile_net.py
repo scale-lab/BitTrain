@@ -9,10 +9,10 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = mobilenet_v2().to(device)
-    inputs = randn(8, 3, 224, 224, device=device)
-    labels = randint(2, (8, ), device=device)
+    inputs = randn(16, 3, 224, 224, device=device)
+    labels = randint(2, (16, ), device=device)
     loss_fn = nll_loss
-    mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=torch.cuda.is_available())
+    mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=torch.cuda.is_available(), export=True)
 
     print(f'Mobilenet - Memory Footprint: {mem} MB - Latency: {compute} ms')
 

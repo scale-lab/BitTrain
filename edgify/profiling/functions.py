@@ -26,9 +26,10 @@ def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='
             out = model(inputs)
             loss = loss_fn(out, labels)
             loss.backward()
-
-    if use_cuda:
-        mem_usage = prof.total_average().cuda_memory_usage
+            if use_cuda:
+                mem_usage = torch.cuda.memory_allocated()
+    
+    if use_cuda:    
         compute_time = prof.total_average().self_cuda_time_total
         table = prof.key_averages().table(sort_by="cuda_memory_usage")
     else:
