@@ -33,9 +33,17 @@ if __name__ == '__main__':
     model.to(device)
 
     # Re-train the last fully connected layers and biases
-    model = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
+    model, accuracy, time = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
+    
     if args.output_dir:
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
         file_name = os.path.join(args.output_dir, "model.pt")
         torch.save(model.state_dict(), file_name)
+
+        log_file_name = os.path.join(args.output_dir, "training.log")
+        with open(log_file_name, 'w') as f:
+            for arg in vars(args):
+                f.write(f'{arg}: {getattr(args, arg)} \n')
+            f.write(f'Accuracy: {accuracy*100:.4f} % \n')
+            f.write(f'Training Time: {time:.4f} % \n')
