@@ -26,6 +26,7 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
             labels = randint(2, (batch_size, ))
             loss_fn = nll_loss
             mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=False, name=str(name+"CPU"))
+            torch.cuda.empty_cache()
             cpu_mem.append(mem)
             cpu_compute.append(compute)
             if verbose:
@@ -42,6 +43,7 @@ def compare_batchsize_cpu_vs_cuda(verbose=False):
             labels = randint(2, (batch_size, )).to(device)
             loss_fn = nll_loss
             mem, compute = profile(model, inputs, labels, loss_fn, use_cuda=True, name=str(name+"CUDA"))
+            torch.cuda.empty_cache()
             cuda_mem.append(mem)
             cuda_compute.append(compute)
             if verbose:
