@@ -16,9 +16,9 @@ class TLModel(torch.nn.Module):
         self.num_classes = num_classes
 
         # Freeze layers according to chosen strategy
-        if tl_strategy == TLStrategy.freeze_feature_extractor_all:
+        if tl_strategy == TLStrategy.freeze_feature_extractor_all.value:
             self._freeze_all()
-        elif tl_strategy == TLStrategy.freeze_feature_extractor_weights_only:
+        elif tl_strategy == TLStrategy.freeze_feature_extractor_weights_only.value:
             self._freeze_weights()
 
         # Add fully connected layers for classification
