@@ -3,7 +3,7 @@ import argparse
 import torch
 from utils.dataset import load_dataset
 from utils.train import train_model
-from utils.model import TLModel, TLStrategy
+from utils.model import TLModel
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
@@ -11,15 +11,21 @@ if __name__ == '__main__':
         help="Name of the model you want from PyTorch model zoo.")
     parser.add_argument("--dataset_name", type=str, default="cifar10", \
         help="Name of the dataset you want from PyTorch dataset zoo.")
-    parser.add_argument("--fc_hidden_dim", nargs="+", default=[1024,256], \
-        help="List of the hidden layers dimensions for the classifier.")
     parser.add_argument("--batch_size", type=int, default=16, \
         help="Batch size.")
+    parser.add_argument("--tl_strategy", type=int, default=1, \
+        help="Transfer learning strategy: 1 for full_retraining, \
+                2 for freeze_feature_extractor_all, \
+                3 for freeze_feature_extractor_weights_only.")
     parser.add_argument("--epochs", type=int, default=25, \
         help="Number of epochs.")
     parser.add_argument("--output_dir", type=str, \
         help="Output directory for saving the trained model.")
     args = parser.parse_args()
+    print("Arguments:")
+    for arg in vars(args):
+        print(f'{arg}: {getattr(args, arg)}')
+    print()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
@@ -27,12 +33,11 @@ if __name__ == '__main__':
                 load_dataset(args.dataset_name, batch_size=args.batch_size)
     
     model = TLModel(model_name=args.model, 
-                    fc_hidden_dim=args.fc_hidden_dim,
                     num_classes=len(class_names), 
-                    tl_strategy=TLStrategy.freeze_feature_extractor_all)
+                    tl_strategy=args.tl_strategy)
     model.to(device)
 
-    # Re-train the last fully connected layers
+    # Re-train the complete model
     model, accuracy, time = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
     
     if args.output_dir:
