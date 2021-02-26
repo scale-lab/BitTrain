@@ -7,7 +7,7 @@ def train_model(model, dataloaders, dataset_sizes, device, num_epochs=1):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
-    # since = time.time()
+    since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -73,7 +73,9 @@ def train_model(model, dataloaders, dataset_sizes, device, num_epochs=1):
         if val_acc > best_acc:
             best_acc = val_acc
             best_model_wts = copy.deepcopy(model.state_dict())
-    
+    end = time.time() - since
+
     # load best model weights
     model.load_state_dict(best_model_wts)
-    return model
+    
+    return model, best_acc, end
