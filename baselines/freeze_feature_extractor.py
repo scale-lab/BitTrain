@@ -1,48 +1,41 @@
 import os
-import time
-import copy
 import argparse
 import torch
-from torchvision import datasets, models, transforms
-from utils.datasets import load_data
+from utils.dataset import load_dataset
 from utils.train import train_model
-from edgify.profiling.functions import profile
+from utils.model import TLModel, TLStrategy
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument("model", type=str, \
+    parser.add_argument("--model", type=str, default="resnet18", \
         help="Name of the model you want from PyTorch model zoo.")
+    parser.add_argument("--dataset_name", type=str, default="cifar10", \
+        help="Name of the dataset you want from PyTorch dataset zoo.")
+    parser.add_argument("--fc_hidden_dim", nargs="+", default=[1024,256], \
+        help="List of the hidden layers dimensions for the classifier.")
+    parser.add_argument("--batch_size", type=int, default=16, \
+        help="Batch size.")
+    parser.add_argument("--epochs", type=int, default=25, \
+        help="Number of epochs.")
+    parser.add_argument("--output_dir", type=str, \
+        help="Output directory for saving the trained model.")
     args = parser.parse_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    dataloaders, class_names, dataset_sizes = load_data("cifar10")
-    model = getattr(models, args.model)(pretrained=True)
     
-    # Freeze all the convolutional layers of the network
-    for param in model.parameters():
-        param.requires_grad = False
-
-    # Add fully connected layers for classification
-    num_ftrs = model.fc.in_features
-    model.fc = torch.nn.Linear(num_ftrs, len(class_names))
-
+    dataloaders, class_names, dataset_sizes = \
+                load_dataset(args.dataset_name, batch_size=args.batch_size)
+    
+    model = TLModel(model_name=args.model, 
+                    fc_hidden_dim=args.fc_hidden_dim,
+                    num_classes=len(class_names), 
+                    tl_strategy=TLStrategy.freeze_feature_extractor_all)
     model.to(device)
 
-    # Do memory profiling first
-    inputs, labels = next(iter(dataloaders['val']))
-
-    inputs = inputs.to(device)
-    labels = labels.to(device)
-
-    mem_usage, compute_time = profile(model, inputs, labels, 
-                                      torch.nn.CrossEntropyLoss(), 
-                                      use_cuda=torch.cuda.is_available(),
-                                      export=False)
-    compute_time /= 1000.0
-
-    print(f'Memory usage (Mb): {mem_usage:,}, Compute Time (sec.): {compute_time:.4f} on {device}')
-    
-    # Re-train the last fully connected layers
-    model = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=25)
-
-    torch.save(model.state_dict(), "freeze_feature_extractor.pt")
+    # Re-train the last fully connected layers and biases
+    model = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
+    if args.output_dir:
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+        file_name = os.path.join(args.output_dir, "model.pt")
+        torch.save(model.state_dict(), file_name)
