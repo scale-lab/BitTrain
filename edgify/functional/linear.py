@@ -13,7 +13,7 @@ class Linear(torch.auto.autograd):
     @staticmethod
     def backward(ctx, grad_output):
         input, weight, bias = ctx.saved_tensors
-        input, weight, bias = input.to_dense(), weight.to_dense(), bias.to_dense()
+        input, weight, bias = input.to_dense(), weight.to_dense(), bias.to_dense() if bias else None
         grad_input = grad_weight = grad_bias = None
 
         if ctx.needs_input_grad[0]:
