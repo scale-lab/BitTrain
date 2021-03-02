@@ -48,15 +48,16 @@ if __name__ == '__main__':
     from torch.nn.functional import nll_loss
     from torchvision.models import resnet18, resnet34
     
-    inputs = randn(5, 3, 224, 224)
-    labels = randint(2, (5, ))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    inputs = randn(64, 3, 224, 224, device=device)
+    labels = randint(2, (64, ), device=device)
     loss_fn = nll_loss
 
-    model = resnet18()
+    model = resnet18().to(device)
     mem = profile(model, inputs, labels, loss_fn, use_cuda=True)
     print(mem)
 
-    model = resnet34()
+    model = resnet34().to(device)
     mem = profile(model, inputs, labels, loss_fn, use_cuda=True)
     print(mem)
 
