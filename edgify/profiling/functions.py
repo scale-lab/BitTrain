@@ -11,7 +11,7 @@ def _memory_peak_from_nvidia_output(lines):
     return max(lines)
 
 
-def profile(model, inputs, labels, loss_fn, use_cuda=False, export=False, name='model_training'):
+def profile(model, inputs, labels, loss_fn, use_cuda=True, export=False, name='model_training'):
     '''
     Returns the memory usage and compute time of one training loop (forward, backward).
 
@@ -53,10 +53,10 @@ if __name__ == '__main__':
     loss_fn = nll_loss
 
     model = resnet18()
-    mem = profile(model, inputs, labels, loss_fn)
+    mem = profile(model, inputs, labels, loss_fn, use_cuda=True)
     print(mem)
 
     model = resnet34()
-    mem = profile(model, inputs, labels, loss_fn)
+    mem = profile(model, inputs, labels, loss_fn, use_cuda=True)
     print(mem)
 
