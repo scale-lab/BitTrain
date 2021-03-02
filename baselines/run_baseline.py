@@ -4,6 +4,7 @@ import torch
 from utils.dataset import load_dataset
 from utils.train import train_model
 from utils.model import TLModel
+from utils.sparsity_stats import calc_zero_activations_percentages
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
@@ -36,6 +37,11 @@ if __name__ == '__main__':
                     num_classes=len(class_names), 
                     tl_strategy=args.tl_strategy)
     model.to(device)
+
+    avg_sparsity_ratio = calc_zero_activations_percentages(model, dataloaders['val'], 
+                            device=device, layer_types=[torch.nn.ReLU, torch.nn.ReLU6], 
+                            verbose=False, plot=False, model_name=args.model)
+    print('Average Sparsity Ratio = {:4f} %'.format(100*avg_sparsity_ratio))
 
     # Re-train the complete model
     model, accuracy, time = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
