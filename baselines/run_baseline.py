@@ -58,3 +58,4 @@ if __name__ == '__main__':
                 f.write(f'{arg}: {getattr(args, arg)} \n')
             f.write(f'Accuracy: {accuracy*100:.4f} % \n')
             f.write(f'Training Time: {time:.4f} % \n')
+
