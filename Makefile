@@ -2,7 +2,7 @@
 
 clean:
 	rm -rf dist
-	rm -rf edaac.egg-info
+	rm -rf edgify.egg-info
 	rm -rf build
 	
 build:
