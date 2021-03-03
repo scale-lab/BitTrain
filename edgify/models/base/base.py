@@ -1,19 +1,32 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from edgify.functional.conv2d import Conv2d
 
 
 __all__ = ['ResNet', 'BasicBlock']
 
 
+class SparseConv2d(nn.Conv2d):
+    # only override the forward function
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if self.padding_mode != 'zeros':
+            return Conv2d.apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
+                            self.weight, self.bias, self.stride,
+                            _pair(0), self.dilation, self.groups)
+        return Conv2d.apply(input, self.weight, self.bias, self.stride,
+                        self.padding, self.dilation, self.groups)
+
+
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+    return SparseConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
 def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+    return SparseConv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
 class BasicBlock(nn.Module):

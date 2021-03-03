@@ -1,6 +1,6 @@
 import torch
 
-class Linear(torch.auto.autograd):
+class Linear(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input, weight, bias=None):
