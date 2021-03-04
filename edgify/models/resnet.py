@@ -1,4 +1,5 @@
 import torch
+from torchvision.models.utils import load_state_dict_from_url
 from edgify.models.base import BasicBlock, Bottleneck, ResNet
 
 __all__ = [

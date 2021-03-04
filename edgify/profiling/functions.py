@@ -8,7 +8,7 @@ def _memory_peak_from_nvidia_output(lines):
     Returns the peak memory in MiB
     '''
     lines = list(map(lambda l: int(l.decode("utf-8").strip().split(' ')[0]), lines[1:]))
-    return max(lines)
+    return max(lines), sum(lines)/len(lines)
 
 
 def profile(model, inputs, labels, loss_fn, use_cuda=True, export=False, name='model_training'):
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     loss_fn = nll_loss
 
     model = resnet18_sparse().to(device)
-    mem = profile(model, inputs, labels, loss_fn, use_cuda=True)
-    print(mem)
+    mem_peak, mem_avg = profile(model, inputs, labels, loss_fn, use_cuda=True)
+    print(mem_peak, mem_avg)
 
 

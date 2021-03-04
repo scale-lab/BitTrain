@@ -1,10 +1,16 @@
 import os
+import sys
 import argparse
 import torch
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from utils.dataset import load_dataset
 from utils.train import train_model
-from utils.model import TLModel
 from utils.sparsity_stats import calc_zero_activations_percentages
+from edgify import models
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
@@ -14,10 +20,6 @@ if __name__ == '__main__':
         help="Name of the dataset you want from PyTorch dataset zoo.")
     parser.add_argument("--batch_size", type=int, default=16, \
         help="Batch size.")
-    parser.add_argument("--tl_strategy", type=int, default=1, \
-        help="Transfer learning strategy: 1 for full_retraining, \
-                2 for freeze_feature_extractor_all, \
-                3 for freeze_feature_extractor_weights_only.")
     parser.add_argument("--epochs", type=int, default=25, \
         help="Number of epochs.")
     parser.add_argument("--output_dir", type=str, \
@@ -33,15 +35,8 @@ if __name__ == '__main__':
     dataloaders, class_names, dataset_sizes = \
                 load_dataset(args.dataset_name, batch_size=args.batch_size)
     
-    model = TLModel(model_name=args.model, 
-                    num_classes=len(class_names), 
-                    tl_strategy=args.tl_strategy)
+    model = getattr(models, args.model)(pretrained=True)
     model.to(device)
-
-    avg_sparsity_ratio = calc_zero_activations_percentages(model, dataloaders['val'], 
-                            device=device, layer_types=[torch.nn.ReLU, torch.nn.ReLU6], 
-                            verbose=False, plot=False, model_name=args.model)
-    print('Average Sparsity Ratio = {:4f} %'.format(100*avg_sparsity_ratio))
 
     # Re-train the complete model
     model, accuracy, time = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
