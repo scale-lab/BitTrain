@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from edgify.functional.conv2d import Conv2d
 
 
-__all__ = ['ResNet', 'BasicBlock']
+__all__ = ['ResNet', 'BasicBlock', 'Bottleneck']
 
 
 class SparseConv2d(nn.Conv2d):
