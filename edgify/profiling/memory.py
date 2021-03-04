@@ -3,14 +3,14 @@ import torch.autograd.profiler as profiler
 import torch 
 
 
-__all__ = ['Profiler']
+__all__ = ['ServerProfiler']
 
 
-class Profiler:
+class ServerProfiler:
     def __init__(self):
         self.pid = None
 
-    def start_profiling(self, use_cuda=True):
+    def start(self, use_cuda=True):
         if not use_cuda:
             print("ERROR: profiling on cpu is currently unsupported")
             return None, None
@@ -22,18 +22,19 @@ class Profiler:
         command = ["nvidia-smi", "--query-gpu=memory.used", "--format=csv", "-l", "1"]
         self.pid = subprocess.Popen(command, stdout=subprocess.PIPE)
 
-    def end_profiling(self):
+    def end(self):
         if not self.pid:
             print("ERROR: No process initialized, use Profiler.start_profiling to initialize a process")
         self.pid.kill()
-        return self._memory_from_nvidia_output(self.pid.stdout.readlines())
+        return self._parse_nvidia_output(self.pid.stdout.readlines())
 
-    def _memory_from_nvidia_output(self, lines):
+    def _parse_nvidia_output(self, lines):
         '''
         Returns the peak memory in MiB
         '''
         lines = list(map(lambda l: int(l.decode("utf-8").strip().split(' ')[0]), lines[1:]))
-        return max(lines), sum(lines)/len(lines)
+        return max(lines), sum(lines)/len(lines), len(lines)
+
 
 
 if __name__ == '__main__':
@@ -58,3 +59,4 @@ if __name__ == '__main__':
 
     print(profiler.end_profiling())
 
+    
