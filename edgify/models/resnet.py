@@ -3,7 +3,9 @@ from torchvision.models.utils import load_state_dict_from_url
 from edgify.models.base import BasicBlock, Bottleneck, ResNet
 
 __all__ = [
-    'resnet18'
+    'resnet18',
+    'resnet34',
+    'resnet50'
 ]
 
 model_urls = {
