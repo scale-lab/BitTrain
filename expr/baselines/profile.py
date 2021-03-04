@@ -11,7 +11,7 @@ sys.path.append(parentdir)
 from utils.dataset import load_dataset
 from utils.train import train_model
 from utils.sparsity_stats import calc_zero_activations_percentages
-from edgify import models
+from torchvision import models
 from edgify.profiling import Profiler
 
 
