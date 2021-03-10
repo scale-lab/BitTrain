@@ -57,6 +57,19 @@ python run_baseline.py --model {MODEL_NAME}
 - `DATASET_NAME` is the name of the dataset from [PyTorch dataset zoo](https://pytorch.org/vision/0.8/datasets.html).
 - `TL_STRATEGY` is the transfer learning strategy number as mentioned above.
 
+## Sparse Tensor
+
+Make sure you have the latest version of `clang` compiler. Then, build our sparse tensor using: `make install`.
+
+Use it:
+
+```Python
+import torch
+from edgify_tensor import BitmapTensor  # still WIP
+
+
+```
+
 ## License
 BSD-3
 

@@ -4,7 +4,12 @@ clean:
 	rm -rf dist
 	rm -rf edgify.egg-info
 	rm -rf build
+	python setup.py clean
 	
+install:
+	python setup.py install
+	CC=clang CXX=clang++ NO_CUDA=1 python edgify/sparse/setup.py install
+
 build:
 	python setup.py sdist bdist_wheel
 
