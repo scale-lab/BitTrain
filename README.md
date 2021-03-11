@@ -59,15 +59,16 @@ python run_baseline.py --model {MODEL_NAME}
 
 ## Sparse Tensor
 
-Make sure you have the latest version of `clang` compiler. Then, build our sparse tensor using: `make install`.
+Make sure you have the latest version of `clang` compiler, as well as `boost` libraries. 
+Then, build our sparse tensor using: `make install`.
 
 Use it:
 
 ```Python
 import torch
-from edgify_tensor import BitmapTensor  # still WIP
+from edgify_tensor import BitmapTensor
 
-
+x = BitmapTensor(torch.tensor([1.0, 2.0, 3.0]))
 ```
 
 ## License

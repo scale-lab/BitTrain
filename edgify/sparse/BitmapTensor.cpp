@@ -1,32 +1,35 @@
 #include <vector>
+#include <boost/dynamic_bitset.hpp>
 #include <torch/extension.h>
 
 
-// TODO: Define a new data type called BitmapTensor
+class BitmapTensor {
+  private:
+    float_t* values;
+    int8_t* shape;
+    boost::dynamic_bitset<> bitmap;
+  public:
+    BitmapTensor(torch::Tensor t);
+    ~BitmapTensor();
+    torch::Tensor get_dense();
+};
 
-
-// TODO: Return bitmap tensor instead
-std::vector<int> get_bitmap(torch::Tensor t) {
-    // TODO: extract indices of non-zero elements
-
-    // TODO: build bitmap
-
-    // TODO: compress elements to non-zero vector
-
-    auto bm = {5, 7};
-    return bm;
+BitmapTensor::BitmapTensor(torch::Tensor t) {
+  // TODO: convert dense to our format
+  std::cout << "I'm a construtor with torch input" << std::endl;
 }
 
+torch::Tensor BitmapTensor::get_dense() {
+  // TODO: reconstruct dense from our format
+  auto t = torch::Tensor();
+  std::cout << "I will return a dense tensor" << std::endl;
 
-// TODO: take bitmap tensor instead
-torch::Tensor get_tensor(int b) {
-    auto t = torch::Tensor();
-
-    return t;
+  return t;
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("get_bitmap", &get_bitmap, "Get bitmap from tensor");
-  m.def("get_tensor", &get_tensor, "Get tensor from bitmap");
+  py::class_<BitmapTensor>(m, "BitmapTensor")
+        .def(py::init<const torch::Tensor &>())
+        .def("get_dense", &BitmapTensor::get_dense);
 }
 
