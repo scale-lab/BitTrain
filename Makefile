@@ -3,8 +3,10 @@
 clean:
 	rm -rf dist
 	rm -rf edgify.egg-info
+	rm -rf edgify_tensor.egg-info
 	rm -rf build
 	python setup.py clean
+	python edgify/sparse/setup.py clean
 	
 install:
 	python setup.py install
