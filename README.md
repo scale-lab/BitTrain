@@ -68,7 +68,9 @@ Use it:
 import torch
 from edgify_tensor import BitmapTensor
 
-x = BitmapTensor(torch.tensor([1.0, 2.0, 3.0]))
+x = BitmapTensor(torch.tensor([[5.0, 0., 0.], [0., 0., 1.]]))
+y = x.get_dense()
+
 ```
 
 ## License
