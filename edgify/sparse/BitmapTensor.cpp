@@ -1,4 +1,5 @@
 #include <vector>
+#include <torch/csrc/autograd/functions/utils.h>
 #include <boost/dynamic_bitset.hpp>
 #include <torch/extension.h>
 
@@ -8,6 +9,7 @@ class BitmapTensor {
     torch::IntArrayRef shape;
     std::vector<float_t> values;
     boost::dynamic_bitset<> bitmap;
+    std::shared_ptr<torch::autograd::Node> grad_fn;
   public:
     BitmapTensor(torch::Tensor t);
     ~BitmapTensor();
@@ -16,6 +18,7 @@ class BitmapTensor {
 
 BitmapTensor::BitmapTensor(torch::Tensor t) {
   shape = t.sizes();
+  grad_fn = t.grad_fn();
   
   std::vector<float_t> v(t.flatten().data_ptr<float_t>(), t.flatten().data_ptr<float_t>() + t.flatten().numel());
   for (auto el: v) {
@@ -40,8 +43,9 @@ torch::Tensor BitmapTensor::get_dense() {
       v.push_back(0.0);
     }
   }
-
-  torch::Tensor t = torch::from_blob(v.data(), shape).clone();
+  
+  torch::Tensor t = torch::from_blob(v.data(), shape, torch::requires_grad(true)).clone();
+  torch::autograd::set_history(t, grad_fn);
   
   return t;
 }
