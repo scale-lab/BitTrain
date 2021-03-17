@@ -6,10 +6,9 @@
 
 class BitmapTensor {
   private:
-    torch::IntArrayRef shape;
+    std::vector<int64_t> shape;
     std::vector<float_t> values;
     boost::dynamic_bitset<> bitmap;
-    std::shared_ptr<torch::autograd::Node> grad_fn;
   public:
     BitmapTensor(torch::Tensor t);
     ~BitmapTensor();
@@ -17,8 +16,9 @@ class BitmapTensor {
 };
 
 BitmapTensor::BitmapTensor(torch::Tensor t) {
-  shape = t.sizes();
-  grad_fn = t.grad_fn();
+  for (auto s: t.sizes()) {
+    shape.push_back(s);
+  }
   
   std::vector<float_t> v(t.flatten().data_ptr<float_t>(), t.flatten().data_ptr<float_t>() + t.flatten().numel());
   for (auto el: v) {
@@ -45,7 +45,6 @@ torch::Tensor BitmapTensor::get_dense() {
   }
   
   torch::Tensor t = torch::from_blob(v.data(), shape, torch::requires_grad(true)).clone();
-  torch::autograd::set_history(t, grad_fn);
   
   return t;
 }
