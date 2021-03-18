@@ -1,5 +1,10 @@
 .PHONY: all test clean
 
+ifeq ($(shell uname -s | tr A-Z a-z),Darwin)
+	CC=clang 
+	CXX=clang++ 
+endif
+
 clean:
 	rm -rf dist
 	rm -rf edgify.egg-info
@@ -10,11 +15,9 @@ clean:
 	
 install:
 	python setup.py install
-	CC=clang CXX=clang++ NO_CUDA=1 python edgify/sparse/setup.py install
-
+	CC=$(CC) CXX=$(CXX) python edgify/sparse/setup.py install
 build:
 	python setup.py sdist bdist_wheel
-
 test:
 	python test.py
 

@@ -12,7 +12,7 @@ class BitmapTensor {
   public:
     BitmapTensor(torch::Tensor t);
     ~BitmapTensor();
-    torch::Tensor get_dense();
+    torch::Tensor get_dense(bool on_gpu);
 };
 
 BitmapTensor::BitmapTensor(torch::Tensor t) {
@@ -20,20 +20,36 @@ BitmapTensor::BitmapTensor(torch::Tensor t) {
     shape.push_back(s);
   }
   
-  std::vector<float_t> v(t.flatten().data_ptr<float_t>(), t.flatten().data_ptr<float_t>() + t.flatten().numel());
-  for (auto el: v) {
-    if (el != 0) {
-      values.push_back(el);
-      bitmap.push_back(1);
-    } else {
-      bitmap.push_back(0);
+  if (t.device().type() == torch::kCPU) {
+    auto tf = t.flatten().data<float_t>();
+    for (int i = 0; i < t.numel(); i++) {
+      if (tf[i] != 0) {
+        values.push_back(tf[i]);
+        bitmap.push_back(1);
+      } else {
+        bitmap.push_back(0);
+      }
+    }
+  } else {
+    auto tf = t.flatten();
+    for (int i = 0; i < t.numel(); i++) {
+      auto item = tf[i].item<float_t>();  // this is very slow
+      if (item != 0) {
+        values.push_back(item);
+        bitmap.push_back(1);
+      } else {
+        bitmap.push_back(0);
+      }
     }
   }
+  
 }
+  
+
 
 BitmapTensor::~BitmapTensor() {}
 
-torch::Tensor BitmapTensor::get_dense() {
+torch::Tensor BitmapTensor::get_dense(bool on_gpu) {
   std::vector<float> v;
   int j = 0;
   for (auto i = 0; i < (int) bitmap.size(); i++){
@@ -44,8 +60,13 @@ torch::Tensor BitmapTensor::get_dense() {
     }
   }
   
-  torch::Tensor t = torch::from_blob(v.data(), shape, torch::requires_grad(true)).clone();
-  
+  torch::Tensor t;
+  if (on_gpu && torch::cuda::is_available()) {
+    t = torch::from_blob(v.data(), shape).clone().to(torch::kCUDA);
+  } else {
+    t = torch::from_blob(v.data(), shape).clone();
+  }
+
   return t;
 }
 

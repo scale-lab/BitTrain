@@ -15,7 +15,7 @@ class Conv2d(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         stride, padding, dilation, groups = ctx.stride, ctx.padding, ctx.dilation, ctx.groups
-        input = ctx.input.get_dense()
+        input = ctx.input.get_dense(grad_output.device != torch.device("cpu"))
         weights, bias = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = None
 
