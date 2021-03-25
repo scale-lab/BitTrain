@@ -45,7 +45,6 @@ BitmapTensor::BitmapTensor(torch::Tensor t) {
       }
     }
   }
-  std::cout << values.size() << "/" << t.numel() << " (" << (float) values.size() / (float) t.numel() * 100.0 << "%)" <<  std::endl;
 }
   
 
@@ -74,47 +73,60 @@ torch::Tensor BitmapTensor::get_dense(bool on_gpu) {
 }
 
 
-class LinearFunction : public Function<LinearFunction> {
+class Conv2dFunction : public Function<Conv2dFunction> {
  public:
-  // Note that both forward and backward are static functions
-
-  // bias is an optional argument
   static torch::Tensor forward(
-      AutogradContext *ctx, torch::Tensor input, torch::Tensor weight, torch::Tensor bias = torch::Tensor()) {
-    ctx->save_for_backward({input, weight, bias});
-    auto output = input.mm(weight.t());
-    if (bias.defined()) {
-      output += bias.unsqueeze(0).expand_as(output);
-    }
-    return output;
+      AutogradContext *ctx, const torch::Tensor & input, const torch::Tensor & weight,
+      torch::IntArrayRef stride, torch::IntArrayRef padding, torch::IntArrayRef dilation, int64_t groups) {
+    ctx->save_for_backward({input, weight});
+    ctx->saved_data["stride"] = stride;
+    ctx->saved_data["padding"] = padding;
+    ctx->saved_data["dilation"] = dilation;
+    ctx->saved_data["groups"] = groups;
+
+
+    return torch::nn::functional::detail::conv2d(
+      input, weight, torch::Tensor(),   // bias is currently passed as None
+      stride, padding, dilation, groups);
   }
 
   static tensor_list backward(AutogradContext *ctx, tensor_list grad_outputs) {
     auto saved = ctx->get_saved_variables();
     auto input = saved[0];
     auto weight = saved[1];
-    auto bias = saved[2];
 
+    auto stride = ctx->saved_data["stride"];
+    auto padding = ctx->saved_data["padding"];
+    auto dilation = ctx->saved_data["dilation"];
+    auto groups = ctx->saved_data["groups"];
+
+    // TODO: change the below logic
     auto grad_output = grad_outputs[0];
+
+
+    // auto grad_input = torch::autograd::conv2d_input(input.sizes(), weight, grad_output, 
+    //                                                     stride, padding, dilation, groups);
     auto grad_input = grad_output.mm(weight);
     auto grad_weight = grad_output.t().mm(input);
+    
     auto grad_bias = torch::Tensor();
-    if (bias.defined()) {
-      grad_bias = grad_output.sum(0);
-    }
+    // if (bias.defined()) {
+    //   grad_bias = grad_output.sum(0);
+    // }
 
-    return {grad_input, grad_weight, grad_bias};
+    return {grad_input, grad_weight, grad_bias, torch::Tensor(), torch::Tensor(), torch::Tensor(), torch::Tensor()};
   }
 };
 
-torch::Tensor apply(torch::Tensor input, torch::Tensor weight) {
-  return LinearFunction::apply(input, weight);
+torch::Tensor conv2d_apply(torch::Tensor & input, const torch::Tensor & weight,
+      torch::IntArrayRef stride, torch::IntArrayRef padding, torch::IntArrayRef dilation, int64_t groups) {
+  return Conv2dFunction::apply(input, weight, stride, padding, dilation, groups);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   py::class_<BitmapTensor>(m, "BitmapTensor")
         .def(py::init<const torch::Tensor &>())
         .def("get_dense", &BitmapTensor::get_dense);
-  m.def("apply", &apply, "Apply Linear Function");
+  m.def("conv2d_apply", &conv2d_apply, "Apply Conv2d Function");
 }
 

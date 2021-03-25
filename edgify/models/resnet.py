@@ -5,7 +5,9 @@ from edgify.models.base import BasicBlock, Bottleneck, ResNet
 __all__ = [
     'resnet18',
     'resnet34',
-    'resnet50'
+    'resnet50',
+    'resnet101',
+    'resnet152'
 ]
 
 model_urls = {
@@ -38,5 +40,13 @@ def resnet34(pretrained=False, progress=True, **kwargs):
 
 def resnet50(pretrained=False, progress=True, **kwargs):
     return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+                   **kwargs)
+
+def resnet101(pretrained=False, progress=True, **kwargs):
+    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
+                   **kwargs)
+
+def resnet152(pretrained=False, progress=True, **kwargs):
+    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
                    **kwargs)
 
