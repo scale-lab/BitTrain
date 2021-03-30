@@ -1,50 +1,34 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from edgify.functional.conv2d import Conv2d
-from edgify_tensor import conv2d_apply
+from edgify.models.base import BitmapConv2d
+from edgify.models.base import DenseConv2d
 
 
 __all__ = ['ResNet', 'BasicBlock', 'Bottleneck']
 
 
-class SparseConv2d(nn.Conv2d):
-    # only override the forward function
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        if self.padding_mode != 'zeros':
-            return Conv2d.apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
-                            self.weight, self.bias, self.stride,
-                            _pair(0), self.dilation, self.groups)
-        return Conv2d.apply(input, self.weight, self.bias, self.stride,
-                        self.padding, self.dilation, self.groups)
-
-# class SparseConv2d(nn.Conv2d):
-#     # only override the forward function
-#     def forward(self, input: torch.Tensor) -> torch.Tensor:
-#         if self.padding_mode != 'zeros':
-#             return conv2d_apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
-#                             self.weight, self.stride,
-#                             _pair(0), self.dilation, self.groups)
-#         return conv2d_apply(input, self.weight, self.stride,
-#                         self.padding, self.dilation, self.groups)
-
-
-def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
+def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1, bitmap=True):
     """3x3 convolution with padding"""
-    return SparseConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=dilation, groups=groups, bias=False, dilation=dilation)
+    if bitmap:
+        return BitmapConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                            padding=dilation, groups=groups, bias=False, dilation=dilation)
+    return DenseConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                        padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
-def conv1x1(in_planes, out_planes, stride=1):
+def conv1x1(in_planes, out_planes, stride=1, bitmap=True):
     """1x1 convolution"""
-    return SparseConv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+    if bitmap:
+        return BitmapConv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+    return DenseConv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+                 base_width=64, dilation=1, norm_layer=None, bitmap=True):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -53,10 +37,10 @@ class BasicBlock(nn.Module):
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.conv1 = conv3x3(inplanes, planes, stride, bitmap=bitmap)
         self.bn1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
+        self.conv2 = conv3x3(planes, planes, bitmap=bitmap)
         self.bn2 = norm_layer(planes)
         self.downsample = downsample
         self.stride = stride
@@ -90,17 +74,17 @@ class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+                 base_width=64, dilation=1, norm_layer=None, bitmap=True):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         width = int(planes * (base_width / 64.)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv1x1(inplanes, width)
+        self.conv1 = conv1x1(inplanes, width, bitmap=bitmap)
         self.bn1 = norm_layer(width)
-        self.conv2 = conv3x3(width, width, stride, groups, dilation)
+        self.conv2 = conv3x3(width, width, stride, groups, dilation, bitmap=bitmap)
         self.bn2 = norm_layer(width)
-        self.conv3 = conv1x1(width, planes * self.expansion)
+        self.conv3 = conv1x1(width, planes * self.expansion, bitmap=bitmap)
         self.bn3 = norm_layer(planes * self.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -131,7 +115,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
+    def __init__(self, block, layers, bitmap=True, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
@@ -155,13 +139,16 @@ class ResNet(nn.Module):
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer1 = self._make_layer(block, 64, layers[0], bitmap=bitmap)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
+                                       dilate=replace_stride_with_dilation[0],
+                                       bitmap=bitmap)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
+                                       dilate=replace_stride_with_dilation[1],
+                                       bitmap=bitmap)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
+                                       dilate=replace_stride_with_dilation[2],
+                                       bitmap=bitmap)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -182,7 +169,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, bitmap=True):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -191,18 +178,18 @@ class ResNet(nn.Module):
             stride = 1
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
+                conv1x1(self.inplanes, planes * block.expansion, stride, bitmap=bitmap),
                 norm_layer(planes * block.expansion),
             )
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, norm_layer))
+                            self.base_width, previous_dilation, norm_layer, bitmap=bitmap))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer))
+                                norm_layer=norm_layer, bitmap=bitmap))
 
         return nn.Sequential(*layers)
 

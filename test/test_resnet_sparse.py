@@ -6,7 +6,6 @@ from edgify import models
 from torch.nn.functional import nll_loss
 
 class TestResnetSparse:
-    @pytest.mark.skip(reason="just focusing on training test for now")
     def test_forward(self):
         model = models.resnet18()
         data = torch.rand((8, 3, 224, 224))

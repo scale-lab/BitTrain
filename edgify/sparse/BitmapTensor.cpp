@@ -24,7 +24,7 @@ BitmapTensor::BitmapTensor(torch::Tensor t) {
   }
   
   if (t.device().type() == torch::kCPU) {
-    auto tf = t.flatten().data<float_t>();
+    auto tf = t.flatten().data_ptr<float_t>();
     for (int i = 0; i < t.numel(); i++) {
       if (tf[i] != 0) {
         values.push_back(tf[i]);
@@ -47,8 +47,6 @@ BitmapTensor::BitmapTensor(torch::Tensor t) {
   }
 }
   
-
-
 BitmapTensor::~BitmapTensor() {}
 
 torch::Tensor BitmapTensor::get_dense(bool on_gpu) {
@@ -132,10 +130,11 @@ torch::Tensor conv2d_apply(torch::Tensor & input, const torch::Tensor & weight,
   return Conv2dFunction::apply(input, weight, stride, padding, dilation, groups);
 }
 
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   py::class_<BitmapTensor>(m, "BitmapTensor")
         .def(py::init<const torch::Tensor &>())
         .def("get_dense", &BitmapTensor::get_dense);
-  m.def("conv2d_apply", &conv2d_apply, "Apply Conv2d Function");
+  // m.def("conv2d_apply", &conv2d_apply, "Apply Conv2d Function");
 }
 
