@@ -8,25 +8,25 @@ from edgify_tensor import conv2d_apply
 __all__ = ['ResNet', 'BasicBlock', 'Bottleneck']
 
 
-# class SparseConv2d(nn.Conv2d):
-#     # only override the forward function
-#     def forward(self, input: torch.Tensor) -> torch.Tensor:
-#         if self.padding_mode != 'zeros':
-#             return Conv2d.apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
-#                             self.weight, self.bias, self.stride,
-#                             _pair(0), self.dilation, self.groups)
-#         return Conv2d.apply(input, self.weight, self.bias, self.stride,
-#                         self.padding, self.dilation, self.groups)
-
 class SparseConv2d(nn.Conv2d):
     # only override the forward function
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         if self.padding_mode != 'zeros':
-            return conv2d_apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
-                            self.weight, self.stride,
+            return Conv2d.apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
+                            self.weight, self.bias, self.stride,
                             _pair(0), self.dilation, self.groups)
-        return conv2d_apply(input, self.weight, self.stride,
+        return Conv2d.apply(input, self.weight, self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
+
+# class SparseConv2d(nn.Conv2d):
+#     # only override the forward function
+#     def forward(self, input: torch.Tensor) -> torch.Tensor:
+#         if self.padding_mode != 'zeros':
+#             return conv2d_apply(F.pad(input, self._reversed_padding_repeated_twice, mode=self.padding_mode),
+#                             self.weight, self.stride,
+#                             _pair(0), self.dilation, self.groups)
+#         return conv2d_apply(input, self.weight, self.stride,
+#                         self.padding, self.dilation, self.groups)
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):

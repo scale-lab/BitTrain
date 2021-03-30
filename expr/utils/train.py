@@ -42,6 +42,9 @@ def train_model(model, dataloaders, dataset_sizes, device, num_epochs=1):
             running_loss += loss.item()
             running_corrects += torch.sum(preds == labels.data)
 
+            if i % 10 == 0:
+                print('Batch {}/{}'.format(i + 1, len(dataloaders["train"])))
+
         # statistics
         epoch_loss = running_loss/dataset_sizes["train"]
         epoch_acc = running_corrects.double()/dataset_sizes["train"]

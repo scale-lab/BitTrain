@@ -84,37 +84,46 @@ class Conv2dFunction : public Function<Conv2dFunction> {
     ctx->saved_data["dilation"] = dilation;
     ctx->saved_data["groups"] = groups;
 
+    std::cout << "deep " << c10::autograd_dispatch_keyset << std::endl;
+    std::cout << "hello " << at::impl::variable_excluded_from_dispatch() << std::endl;
+    std::cout << "abdo " << input.is_mkldnn() << std::endl;
 
-    return torch::nn::functional::detail::conv2d(
-      input, weight, torch::Tensor(),   // bias is currently passed as None
-      stride, padding, dilation, groups);
+    return at::native::mkldnn_convolution(
+      input, weight, torch::Tensor(),
+      padding, stride, dilation, groups);
+    // return torch::nn::functional::detail::conv2d(
+    //   input, weight, torch::Tensor(),       // bias is currently passed as None
+    //   stride, padding, dilation, groups);
   }
 
   static tensor_list backward(AutogradContext *ctx, tensor_list grad_outputs) {
     auto saved = ctx->get_saved_variables();
     auto input = saved[0];
     auto weight = saved[1];
+    auto bias = torch::Tensor();
 
-    auto stride = ctx->saved_data["stride"];
-    auto padding = ctx->saved_data["padding"];
-    auto dilation = ctx->saved_data["dilation"];
-    auto groups = ctx->saved_data["groups"];
+    auto stride = ctx->saved_data["stride"].toIntVector();
+    auto padding = ctx->saved_data["padding"].toIntVector();
+    auto dilation = ctx->saved_data["dilation"].toIntVector();
+    auto groups = ctx->saved_data["groups"].toInt();
 
-    // TODO: change the below logic
     auto grad_output = grad_outputs[0];
+    
+    // auto grad_input = at::native::mkldnn_convolution_backward_input(input.sizes(), grad_output, weight,  
+    //                                                     padding, stride, dilation, groups, false); // bias not defined for now
+    // auto grad_weight = at::native::mkldnn_convolution_backward_weights(weight.sizes(), grad_output, input,
+    //                                                     padding, stride, dilation, groups, false); // bias not defined for now
 
-
-    // auto grad_input = torch::autograd::conv2d_input(input.sizes(), weight, grad_output, 
-    //                                                     stride, padding, dilation, groups);
-    auto grad_input = grad_output.mm(weight);
-    auto grad_weight = grad_output.t().mm(input);
+    auto grads = at::native::mkldnn_convolution_backward(input, grad_output, weight, 
+                                          padding, stride, dilation, groups, {true, true, false});
     
     auto grad_bias = torch::Tensor();
-    // if (bias.defined()) {
-    //   grad_bias = grad_output.sum(0);
-    // }
+    if (bias.defined()) {
+      grad_bias = grad_output.sum(0);
+    }
 
-    return {grad_input, grad_weight, grad_bias, torch::Tensor(), torch::Tensor(), torch::Tensor(), torch::Tensor()};
+    return {std::get<0>(grads), std::get<1>(grads), torch::Tensor(), torch::Tensor(), torch::Tensor(), torch::Tensor()};
+    // return {grad_input, std::get<0>(grad_weight), grad_bias, torch::Tensor(), torch::Tensor(), torch::Tensor(), torch::Tensor()};
   }
 };
 

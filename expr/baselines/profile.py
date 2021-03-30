@@ -33,7 +33,15 @@ if __name__ == '__main__':
         print(f'{arg}: {getattr(args, arg)}')
     print()
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.platform == 'server':
+        # we don't want to train on gpu on the server (because BitmapTensor is loaded on cpu).
+        # we don't want to report fake results here
+        # in this case, discard the profiler results and use /use/bin/time -f "%M" to get max RSS 
+        device = torch.device("cpu")    
+    else:
+        # if using 'nano', we can report the gpu memory because it is actually shared with the cpu
+        # results here will be credible, and we get to accelerate the training
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     dataloaders, class_names, dataset_sizes = \
                 load_dataset(args.dataset_name, batch_size=args.batch_size)

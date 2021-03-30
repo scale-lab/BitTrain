@@ -20,5 +20,5 @@ class TestResnetSparse:
 
         out = model(inputs)
         loss = nll_loss(out, labels)
-        #loss.backward()
+        loss.backward()
 
