@@ -1,9 +1,4 @@
-.PHONY: all test clean
-
-ifeq ($(shell uname -s | tr A-Z a-z),Darwin)
-	CC=clang 
-	CXX=clang++ 
-endif
+.PHONY: all test clean install
 
 clean:
 	rm -rf dist
@@ -14,10 +9,17 @@ clean:
 	python edgify/sparse/setup.py clean
 	
 install:
+	@if [ $(shell uname | tr A-Z a-z) = "darwin" ]; then\
+		echo "Using clang";\
+		$(eval CC := clang)\
+		$(eval CXX := clang++)\
+    fi
 	python setup.py install
 	CC=$(CC) CXX=$(CXX) python edgify/sparse/setup.py install
+
 build:
 	python setup.py sdist bdist_wheel
+
 test:
 	python test.py
 
@@ -26,3 +28,4 @@ check:
 
 publish: clean build
 	twine upload dist/*
+
