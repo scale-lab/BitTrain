@@ -7,9 +7,8 @@ class Conv2d(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, weights, bias=None, stride=1, padding=0, dilation=1, groups=1):
         ctx.stride, ctx.padding, ctx.dilation, ctx.groups = stride, padding, dilation, groups
-        result = conv2d(input['i'], weights, bias=bias, stride=stride, padding=padding, dilation=dilation, groups=1)
-        ctx.save_for_backward(input['i'], weights, bias if bias else None)
-        del input['i']
+        result = conv2d(input, weights, bias=bias, stride=stride, padding=padding, dilation=dilation, groups=1)
+        ctx.save_for_backward(input, weights, bias if bias else None)
 
         return result
 
