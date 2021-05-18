@@ -24,10 +24,11 @@ if __name__ == '__main__':
         help="Transfer learning strategy: 1 for full_retraining, \
                 2 for freeze_feature_extractor_all, \
                 3 for freeze_feature_extractor_weights_only.")
-    parser.add_argument("--epochs", type=int, default=25, \
+    parser.add_argument("--epochs", type=int, default=2, \
         help="Number of epochs.")
     parser.add_argument("--output_dir", type=str, \
         help="Output directory for saving the trained model.")
+    parser.add_argument("--load", help="Load pretrained model", default="", type=str)
     args = parser.parse_args()
     print("Arguments:")
     for arg in vars(args):
@@ -36,22 +37,20 @@ if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-    dataloaders, class_names, dataset_sizes = \
+    dataloaders, num_classes, dataset_sizes = \
                 load_dataset(args.dataset_name, batch_size=args.batch_size)
     
     model = TLModel(model_name=args.model, 
-                    num_classes=len(class_names), 
+                    num_classes=num_classes, 
                     tl_strategy=args.tl_strategy)
     model.to(device)
 
-    avg_sparsity_ratio = calc_zero_activations_percentages(model, dataloaders['val'], 
-                            device=device, layer_types=[torch.nn.ReLU, torch.nn.ReLU6], 
-                            verbose=False, plot=False, model_name=args.model)
-    print('Average Sparsity Ratio = {:4f} %'.format(100*avg_sparsity_ratio))
+    if args.load:
+        model.load_state_dict(torch.load(args.load))
 
     # Re-train the complete model
     model, accuracy, time = train_model(model, dataloaders, dataset_sizes, device=device, num_epochs=args.epochs)
-    
+
     if args.output_dir:
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
