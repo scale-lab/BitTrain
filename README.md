@@ -1,9 +1,11 @@
-# Edge Training
+# Training Deep Learning Models on The Edge
 
 Training on the Edge enables continuous learning from new data for deployed neural networks on memory-constrained edge devices. 
 Previous work is mostly concerned with reducing the number of model parameters which is only beneficial for inference. 
 However, memory footprint from activations is the main bottleneck for training on the edge. 
 Existing incremental training methods fine-tune the last few layers sacrificing accuracy gains from re-training the whole model. 
+
+![Training on the edge tradeoffs (computation, memory, accuracy)](docs/img/training-on-the-edge.png)
 
 In this work, we investigate the memory footprint of training deep learning models. Using our observations, we exploit activation sparsity and propose a novel bitmap compression format to save the activations during the forward pass of the training, and restoring them during the backward pass for the optimizer computations. The proposed method can be integrated seamlessly in the computation graph of modern deep learning frameworks. Our implementation is safe by construction, and has no negative impact on the accuracy of model training. Experimental results show up to 34% reduction in the memory footprint at a sparsity level of 50%. Further pruning during training results in more than 70% sparsity, which can lead to up to 56% reduction in memory footprint. This work advances the efforts towards bringing more machine learning capabilities to edge devices.
 
