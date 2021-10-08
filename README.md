@@ -1,78 +1,33 @@
 # Edge Training
-Trying to make training on the edge memory efficient
+
+Training on the Edge enables continuous learning from new data for deployed neural networks on memory-constrained edge devices. 
+Previous work is mostly concerned with reducing the number of model parameters which is only beneficial for inference. 
+However, memory footprint from activations is the main bottleneck for training on the edge. 
+Existing incremental training methods fine-tune the last few layers sacrificing accuracy gains from re-training the whole model. 
+
+In this work, we investigate the memory footprint of training deep learning models. Using our observations, we exploit activation sparsity and propose a novel bitmap compression format to save the activations during the forward pass of the training, and restoring them during the backward pass for the optimizer computations. The proposed method can be integrated seamlessly in the computation graph of modern deep learning frameworks. Our implementation is safe by construction, and has no negative impact on the accuracy of model training. Experimental results show up to 34% reduction in the memory footprint at a sparsity level of 50%. Further pruning during training results in more than 70% sparsity, which can lead to up to 56% reduction in memory footprint. This work advances the efforts towards bringing more machine learning capabilities to edge devices.
 
 
-## Setup
+## How this repo is organized
 
-1. `virtualenv .venv --python=python3.7`
-2. `source .venv/bin/activate`
-3. `python setup.py install`
-
-
-## Profiling a model
-
-In order to measure the memory footprint for a model during training, we provide the following function:
-
-```Python
-from edgify.profiling.functions import profile
-
-```
-
-Example
-
-```Python
-import torch
-from torch.nn.functional import nll_loss
-from torchvision.models import resnet18, resnet34
-
-inputs = torch.randn(5, 3, 224, 224)
-labels = torch.randint(2, (5, ))
-loss_fn = nll_loss
-
-model = resnet18()
-mem, compute = profile(model, inputs, labels, loss_fn)
-print(mem, compute)     # prints memory (in KB) and total time for one training loop (forward + backward) in µs.
-```
-
-The function takes optional arguments:
-- `use_cuda=True`: profile memory and time for GPU
-- `export=True`: exports the results of the profiling in table and trace formats. It uses the `name` argument as the file path.
+* `cpp`: this folder includes the implementation of the sparse bitmap tensor in C++, and using libtorch.
+* `data`: is used to hold experimental data from scripts running from `expr` directory.
+* `edgify`: refers to the early implementations of the idea in Python, which did not show the potential of the idea due to the dynamic typing nature of the language. We keep this directory here for future binding with the cpp implementation (contributions are welcome!).
+* `expr`: contains recipes used in our experimental results.
+* `test`: includes test cases for the continuous integration of the future python package.
 
 
-## Baselines
-We perform baselines on a transfer learning task. Refer to the [Pytorch Tutorial](https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html). We support three transfer learning strategies:
-1. Full retraining. 
-2. Freeze feature extractor retraining.
-3. Freeze feature extractor weights only retraining.
+## Why isn't this implemented in Python?
 
-To run the baselines:
+High-level languages used in the deep learning frameworks do not provide fine-grained memory management APIs.
+For example, Python depends on garbage collection techniques the frees up memory of a given object (i.e. tensor or matrix) when there is no references to it.
+This leaves very little control to the developer in controlling how tensors are stored in memory.
 
-```Shell
-cd baselines
-python run_baseline.py --model {MODEL_NAME}
-                       --dataset_name {DATASET_NAME}
-                       --tl_strategy {TL_STRATEGY}
-```
-- `MODEL_NAME` is the name of the model from [PyTorch model zoo](https://pytorch.org/vision/0.8/models.html).
-- `DATASET_NAME` is the name of the dataset from [PyTorch dataset zoo](https://pytorch.org/vision/0.8/datasets.html).
-- `TL_STRATEGY` is the transfer learning strategy number as mentioned above.
+Also, all data types in Python are of type `PyObject`, which means that numbers, characters, strings, and bytes are actually Python objects that consumes more memory for object metadata in order to be tracked by the garbage collector.
+In other words, defining bits or bytes and expecting to get accurate memory measurements is infeasible.
+Therefore, we implemented our proposed bitmap matrix format in C++, using `bitset` and `vector` data types from the C++ standard library for storing the bitmap and the non-zero activations respectively.
 
-## Sparse Tensor
-
-Make sure you have the latest version of `clang` compiler, as well as `boost` libraries. 
-Then, build our sparse tensor using: `make install`.
-
-Use it:
-
-```Python
-import torch
-from edgify_tensor import BitmapTensor
-
-x = BitmapTensor(torch.tensor([[5.0, 0., 0.], [0., 0., 1.]]))
-y = x.get_dense()
-
-```
 
 ## License
-BSD-3
+BSD-3. See [LICENSE] file.
 
