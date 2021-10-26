@@ -23,7 +23,7 @@ setup(
   keywords = ['Edge', 'Computing', 'Deep Learning'],
   install_requires=[
     'numpy==1.20.1',
-    'Pillow==8.1.0',
+    'Pillow==8.3.2',
     'torch==1.7.1',
     'torchvision==0.8.2',
     'typing-extensions==3.7.4.3'
