@@ -31,5 +31,5 @@ Therefore, we implemented our proposed bitmap matrix format in C++, using `bitse
 
 
 ## License
-BSD-3. See [LICENSE] file.
+BSD-3. See [LICENSE](LICENSE) file.
 
